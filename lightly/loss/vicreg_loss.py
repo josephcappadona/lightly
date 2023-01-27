@@ -61,7 +61,7 @@ class VICRegLoss(torch.nn.Module):
 
         self.eps = eps
 
-    def forward(self, z_a: torch.Tensor, z_b: torch.Tensor) -> torch.Tensor:
+    def forward(self, z_a: torch.Tensor, z_b: torch.Tensor, return_all: bool = False) -> torch.Tensor:
         assert z_a.shape[0] > 1 and z_b.shape[0] > 1, f"z_a and z_b must have batch size > 1 but found {z_a.shape[0]} and  {z_b.shape[0]}"
         assert z_a.shape == z_b.shape, f"z_a and z_b must have same shape but found {z_a.shape} and {z_b.shape}."
 
@@ -99,6 +99,11 @@ class VICRegLoss(torch.nn.Module):
         cov_loss = off_diag_cov_x.pow_(2).sum().div(D) + off_diag_cov_y.pow_(2).sum().div(D)
 
         # loss
-        loss = self.lambda_param * repr_loss + self.mu_param * std_loss + self.nu_param * cov_loss
-
-        return loss
+        repr_loss = self.lambda_param * repr_loss
+        std_loss = self.mu_param * std_loss
+        cov_loss = self.nu_param * cov_loss
+        loss = repr_loss + std_loss + cov_loss
+        if return_all:
+            return loss, repr_loss, std_loss, cov_loss
+        else:
+            return loss
